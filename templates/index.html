@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Parashikimi i Sëmundjes së Zemrës</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"> <!-- Ikonat -->
+    <style>
+        .error {
+            color: red;
+            font-size: 0.9em;
+            display: none;
+        }
+        input.invalid {
+            border-color: red;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-container">
+            <h1>Parashiko rrezikun e sëmundjes së zemrës</h1>
+            <form id="heartForm" action="/predict" method="POST" novalidate>
+                <input type="number" name="Age" placeholder="Mosha" required><span class="error">Ju lutem shkruani moshën tuaj.</span><br>
+
+                <input type="number" name="Sex" placeholder="Gjinia (0=Femër, 1=Mashkull)" min="0" max="1" required><span class="error">Shkruani 0 ose 1.</span><br>
+
+                <input type="text" name="ChestPainType" placeholder="Tipi i dhimbjes së gjoksit (TA, ATA, NAP, ASY)" required><span class="error">Zgjidhni: TA, ATA, NAP, ASY.</span><br>
+
+                <input type="number" name="RestingBP" placeholder="Presioni i gjakut në pushim" required><span class="error">Vendosni presionin e gjakut.</span><br>
+
+                <input type="number" name="Cholesterol" placeholder="Kolesteroli (mg/dL)" required><span class="error">Vendosni kolesterolin.</span><br>
+
+                <input type="number" name="FastingBS" placeholder="Sheqeri esëll (0 ose 1)" min="0" max="1" required><span class="error">Shkruani 0 ose 1.</span><br>
+
+                <input type="text" name="RestingECG" placeholder="EKG në pushim (Normal, ST, LVH)" required><span class="error">Zgjidhni: Normal, ST, LVH.</span><br>
+
+                <input type="number" name="MaxHR" placeholder="Rrahjet maksimale të zemrës" required><span class="error">Vendosni rrahjet maksimale.</span><br>
+
+                <input type="text" name="ExerciseAngina" placeholder="Anginë nga ushtrimi (Yes/No)" required><span class="error">Shkruani Yes ose No.</span><br>
+
+                <input type="text" name="Oldpeak" placeholder="Depresioni ST (p.sh., 2.3)" required><span class="error">Vendosni një numër (mund të jetë decimal).</span><br>
+
+                <input type="text" name="ST_Slope" placeholder="Prirja ST (Up, Flat, Down)" required><span class="error">Zgjidhni: Up, Flat, Down.</span><br>
+
+                <button type="submit">Parashiko</button>
+            </form>
+
+            {% if prediction_text %}
+                <h2 class="result">{{ prediction_text }}</h2>
+            {% endif %}
+        </div>
+
+        <div class="info-box">
+            <h2><i class="fas fa-info-circle"></i> Udhëzime për plotësim:</h2>
+            <ul>
+                <li><i class="fas fa-user"></i> <b>Mosha</b>: Vendos numrin e viteve (p.sh., 45)</li>
+                <li><i class="fas fa-venus-mars"></i> <b>Gjinia</b>: 0 = Femër, 1 = Mashkull</li>
+                <li><i class="fas fa-heartbeat"></i> <b>Tipi i dhimbjes së gjoksit</b>: TA, ATA, NAP, ASY</li>
+                <li><i class="fas fa-tachometer-alt"></i> <b>Presioni i gjakut në pushim</b>: Numër në mmHg</li>
+                <li><i class="fas fa-tint"></i> <b>Kolesteroli</b>: Numër në mg/dL</li>
+                <li><i class="fas fa-syringe"></i> <b>Sheqeri esëll</b>: 0 = Jo, 1 = Po</li>
+                <li><i class="fas fa-wave-square"></i> <b>EKG në pushim</b>: Normal, ST, ose LVH</li>
+                <li><i class="fas fa-heart"></i> <b>Rrahjet maksimale të zemrës</b>: Numër (p.sh., 150)</li>
+                <li><i class="fas fa-running"></i> <b>Anginë nga ushtrimi</b>: Yes ose No</li>
+                <li><i class="fas fa-chart-line"></i> <b>Depresioni ST</b>: Numër decimal (p.sh., 1.5)</li>
+                <li><i class="fas fa-arrow-up"></i> <b>Prirja ST</b>: Up, Flat, ose Down</li>
+            </ul>
+            <p class="info-note">(Sistemi nuk është i ndjeshëm ndaj shkronjave të vogla ose të mëdha.)</p>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('heartForm');
+        const inputs = form.querySelectorAll('input');
+
+        form.addEventListener('submit', function(e) {
+            let isValid = true;
+
+            inputs.forEach(input => {
+                const error = input.nextElementSibling;
+                input.classList.remove('invalid');
+                error.style.display = 'none';
+
+                if (!input.value.trim()) {
+                    isValid = false;
+                    input.classList.add('invalid');
+                    error.textContent = "Kjo fushë nuk mund të jetë bosh.";
+                    error.style.display = 'inline';
+                } else {
+                    if (input.name === 'Sex' || input.name === 'FastingBS') {
+                        if (input.value !== '0' && input.value !== '1') {
+                            isValid = false;
+                            input.classList.add('invalid');
+                            error.style.display = 'inline';
+                        }
+                    }
+                    if (input.name === 'ChestPainType') {
+                        if (!['TA', 'ATA', 'NAP', 'ASY'].includes(input.value.toUpperCase())) {
+                            isValid = false;
+                            input.classList.add('invalid');
+                            error.style.display = 'inline';
+                        }
+                    }
+                    if (input.name === 'RestingECG') {
+                        if (!['NORMAL', 'ST', 'LVH'].includes(input.value.toUpperCase())) {
+                            isValid = false;
+                            input.classList.add('invalid');
+                            error.style.display = 'inline';
+                        }
+                    }
+                    if (input.name === 'ExerciseAngina') {
+                        if (!['YES', 'NO'].includes(input.value.toUpperCase())) {
+                            isValid = false;
+                            input.classList.add('invalid');
+                            error.style.display = 'inline';
+                        }
+                    }
+                    if (input.name === 'ST_Slope') {
+                        if (!['UP', 'FLAT', 'DOWN'].includes(input.value.toUpperCase())) {
+                            isValid = false;
+                            input.classList.add('invalid');
+                            error.style.display = 'inline';
+                        }
+                    }
+                }
+            });
+
+            if (!isValid) {
+                e.preventDefault();
+            }
+        });
+    </script>
+
+</body>
+</html>
