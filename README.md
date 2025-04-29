@@ -33,3 +33,10 @@ Run EDA notebooks to explore risk factors
 Train models using model_training.py
 
 Launch Flask app for predictions: flask run
+
+## **Dataset**  
+**This project uses the Heart Failure Prediction Dataset by Federico Soriano:**  
+
+**Soriano, F. (2021). Heart failure prediction [Dataset]. Kaggle.**  
+**Available at: [https://www.kaggle.com/datasets/fedesoriano/heart-failure-prediction].**
+
